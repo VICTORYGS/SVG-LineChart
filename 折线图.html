@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SVG折线图</title>
+    <script src="https://cdn.bootcss.com/vue/2.5.16/vue.js"></script>
+    <style>
+    </style>
+</head>
+<body>
+<div class="a">
+<div style="text-align:center">SVG折线图</div>
+    <div class="coordinate">
+        <div class="y">
+            <div v-for="(v,i) of obj.y.list" :key="i">
+            <span>
+                {{v}}
+            </span>
+            </div>
+            <div class="draw" style="margin: 0;padding:0;position: absolute;width:100%;height: 100%">
+                <svg :class="{showdraw:showanimation}" style="overflow: visible;width: 100%;height: 100%" xmlns="http://www.w3.org/2000/svg" version="1.1" >
+                    <template  v-for="(v,i) of resdata">
+                        <polygon :points="v" :style="{stroke:color[i]}" style="stroke-width:1;"/>
+                        <template v-for="(vv,ii) of v.split(' ').slice(0,((v.split(' ').length-1)/2)+1)">
+                            <circle class="hover" :cx="vv.split(',')[0]" :cy="vv.split(',')[1]" r="4" :style="{stroke:color[i]}" style="position: absolute;fill:#fff;stroke-width:2;" />
+                            <text :style="{stroke:color[i],fill:color[i]}"  style="font-size:20px;display: none" :x="vv.split(',')[0]" :y="vv.split(',')[1]-12">{{Object.values(data[i])[ii]}}</text>
+                        </template>
+                    </template>
+                </svg>
+            </div>
+        </div>
+        <div class="x">
+            <div v-for="(v,i) of obj.x.list" :key="i">
+                <span>{{v}}</span>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+</body>
+<script>
+    new Vue({
+        el: ".a",
+        data: {
+            height: 0,
+            width: 0,
+            obj: {
+                y: {
+                    list: [100, 80, 60, 40, 20],
+                    maxlen: 100
+                },
+                x: {
+                    list: [1, 2, 3, 4, 5, 6],
+                    len: {
+                        a:  1 / 12,
+                        b: 3 / 12,
+                        c: 5 / 12,
+                        d: 7/ 12,
+                        e: 9 / 12,
+                        f: 11 / 12
+                    }
+                }
+            },
+            color:{A:'#3080CB',B:'#05a840'},
+
+            data: {
+                A: {
+                    a: 5, b: 53, c: 33, e: 74, f: 19
+                },
+                B:{
+                    a: 25, b: 43, c: 93, e: 24, f: 5
+                }
+            },
+            showanimation:false
+
+        },
+        methods: {
+            getBoundingClientRect() {
+                let obj = document.querySelector('.y').getBoundingClientRect()
+                console.log('rect',obj,document.querySelector('.draw').style)
+                this.height = obj.height
+                this.width = obj.width
+            }
+
+        },
+        computed: {
+            resdata() {
+                if (this.width && this.height) {
+                    let obj = {}
+                    let arr = []
+                    for (let i in this.data) {
+                        arr = []
+                        for (let ii in this.data[i]) {
+                            let w,h;
+                            w = this.obj.x.len[ii] * this.width
+                            console.log('up',ii,this.obj.y.maxlen-this.data[i][ii])
+                            h = (this.obj.y.maxlen - this.data[i][ii]) /this.obj.y.maxlen  * this.height
+                            w=w
+                            h=h
+                            //两个值也可以进行四舍五入下
+                            console.log(8, w, h)
+                            arr.push(w + ',' + h)
+                        }
+                        let arr1=[]
+                        arr1.push(...arr.slice(0,-1))
+                        arr1.reverse()
+                        arr[-1]+=' '
+                        arr.push(...arr1)
+                        obj[i] = arr.join(' ')
+                    }
+                    console.log('res',obj)
+                    this.showanimation=true
+                    return obj
+                }else {return{}}
+
+            }
+        },
+        mounted() {
+            window.addEventListener('resize',this.getBoundingClientRect)
+            setTimeout(()=>{
+                this.getBoundingClientRect()
+                console.log('长宽', this.width, this.height)
+            })
+            console.log(this.$children[0])
+        },
+        beforeDestroy(){
+            window.removeEventListener('resize',this.getBoundingClientRect)
+        }
+
+    })
+
+</script>
+<style>
+    @keyframes width {
+        0%{width: 0;overflow: hidden;}
+        100%{width: 100%;}
+    }
+    .showdraw{
+        animation: width 1.5s ;
+        /*transition: width 2s;*/
+        /*width: 100%;*/
+    }
+    .hover:hover{
+        stroke-width:4;
+        r:8;
+    }
+    .hover:hover+text{
+        display: inline-block !important;
+    }
+
+    .coordinate {
+        height: 100%;
+        min-height: 300px;
+        min-width: 150px;
+        padding: 60px;
+        display: flex;
+        flex-flow: column;
+    }
+
+    .y {
+        position: relative;
+        flex-grow: 1;
+        display: flex;
+        flex-flow: column;
+    }
+
+    .y > div {
+        flex-grow: 1;
+        border-top: 1px solid #cbcbcb;
+        border-left: 1px solid #333;
+        position: relative;
+    }
+
+    /*.y>div:not(:last-child(1)){*/
+    /*position: relative;*/
+    /*top:-1px*/
+    /*}*/
+    .y > div > span {
+        position: absolute;
+        display: inline-block;
+        height: 1em;
+        line-height: 1em;
+        vertical-align: center;
+        font-size: 18px;
+        top: -0.5em;
+        transform: translateX(-100%);
+        padding-right: 7px;
+    }
+
+    .y > div:last-child {
+        border-bottom: 1px solid #333;
+    }
+
+    .y > div:after {
+        content: '';
+        position: absolute;
+        width: 5px;
+        height: 1px;
+        background: #333;
+        top: -1px;
+        left: -5px;
+    }
+
+    .x {
+        display: flex;
+        height: 30px;
+    }
+
+    .x > div {
+        flex-grow: 1;
+        border-right: 1px solid black;
+        text-align: center;
+        position: relative;
+    }
+
+    .x > div > span {
+        font-size: 20px;
+    }
+
+    .x > div:after {
+        content: '';
+        position: absolute;
+        height: 80%;
+        background: #fff;
+        width: 4px;
+        bottom: 0;
+        right: -3px;
+    }
+
+</style>
+
+</html>
